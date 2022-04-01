@@ -81,6 +81,12 @@ func (p *Gateway) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 		appendHostToXForwardHeader(req.Header, clientIP)
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/api") {
+		http.Error(wr, "the api only forwards /api requests", http.StatusBadRequest)
+
+		return
+	}
+
 	service := "127.0.0.1:5001"
 
 	log.Trace().Str("service", service).Msgf("setting url scheme to http and service to: %s", service)
@@ -90,7 +96,9 @@ func (p *Gateway) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 	resp, err := client.Do(req)
 	if err != nil {
 		http.Error(wr, "Server Error", http.StatusInternalServerError)
-		log.Fatal().Msgf("ServeHTTP: %s", err)
+
+		return
+		// log.Fatal().Msgf("ServeHTTP: %s", err)
 	}
 	defer resp.Body.Close()
 

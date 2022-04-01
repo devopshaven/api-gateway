@@ -10,3 +10,6 @@ build:
 
 package: build
 	docker build -t hub.pirat.app/api-gateway -f fast.Dockerfile .
+
+deploy:
+	docker push hub.pirat.app/api-gateway
