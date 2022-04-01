@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: gateway
+  name: gateway-config
+data:
+  services.yaml: |
+    version: v1
+    services:
+        - name: card-service
+          service_url: card-service
+          paths:
+            - /api/v1/card
+            - /api/card/v1

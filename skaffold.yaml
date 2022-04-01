@@ -1,0 +1,14 @@
+apiVersion: skaffold/v2beta27
+kind: Config
+metadata:
+  name: api-gateway
+build:
+  artifacts:
+  - image: hub.pirat.app/api-gateway
+    docker:
+      dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+    - configmap.yaml
+    - deployment.yaml

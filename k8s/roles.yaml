@@ -1,0 +1,28 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: gateway
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: gateway
+  name: api-gateway
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: gateway
+  name: api-gateway-binding
+subjects:
+- kind: Group
+  name: system:serviceaccounts
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: ""
+  kind: ClusterRole
+  name: api-gateway
