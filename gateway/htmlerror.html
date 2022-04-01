@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gateway Error</title>
+  </head>
+  <body>
+    <h3>Gateway Error</h3>
+    {{ .Error }} 
+    
+    {{if .RequestID}}
+    <p>Request ID: <code>{{ .RequestID }}</code></p>
+    {{end}}
+
+    <p>
+      <small>API gateway {{ .Version }} - devopshaven.com</small>
+    </p>
+  </body>
+</html>
