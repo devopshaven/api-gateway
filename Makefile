@@ -1,6 +1,6 @@
 .PHONY: all
 
-all: clean build package
+all: build package
 
 clean:
 	rm -Rf bin
@@ -13,3 +13,6 @@ package: build
 
 deploy:
 	docker push hub.pirat.app/api-gateway
+
+run:
+	go run .

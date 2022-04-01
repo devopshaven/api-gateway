@@ -9,13 +9,10 @@ import (
 )
 
 func main() {
-	client := gateway.NewConfigClient()
-	client.StartWatcher()
-
 	var addr = flag.String("addr", "127.0.0.1:8080", "The addr of the application.")
 	flag.Parse()
 
-	handler := &gateway.Gateway{}
+	handler := gateway.NewGateway()
 
 	log.Info().Msgf("Starting proxy server on %s", *addr)
 	if err := http.ListenAndServe(*addr, handler); err != nil {

@@ -1,0 +1,6 @@
+version: v1
+services:
+  - name: kubetest
+    serviceUrl: srv-url
+    paths:
+      - /api/kube/test

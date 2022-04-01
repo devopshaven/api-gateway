@@ -8,7 +8,16 @@ data:
     version: v1
     services:
         - name: card-service
-          service_url: card-service
+          serviceUrl: card-service
           paths:
             - /api/v1/card
             - /api/card/v1
+        - name: docker
+          serviceUrl: "docker-registry.developer-tools:5000"
+          paths:
+            - /api/_v2
+        - name: localhost-5008
+          serviceUrl: "127.0.0.1:5008"
+          paths:
+            - /api/local/host
+            - /api/localhost

@@ -13,6 +13,6 @@ type GatewayConfig struct {
 
 type Service struct {
 	Name       string   `yaml:"name,omitempty"`
-	ServiceUrl string   `yaml:"service_url"`
+	ServiceUrl string   `yaml:"serviceUrl"`
 	Paths      []string `yaml:"paths"`
 }

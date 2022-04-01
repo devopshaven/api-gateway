@@ -32,10 +32,14 @@ type ConfigClient struct {
 	config *GatewayConfig
 }
 
+func (cc *ConfigClient) Config() *GatewayConfig {
+	return cc.config
+}
+
 func readNamespace() string {
 	file, err := ioutil.ReadFile(namespaceFile)
 	if err != nil {
-		return "default"
+		return "gateway"
 	}
 
 	return string(file)
@@ -57,6 +61,7 @@ func getClient(pathToCfg string) (*kubernetes.Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return kubernetes.NewForConfig(config)
 }
 
@@ -155,9 +160,13 @@ func (cc *ConfigClient) handleConfigChanges(eventChannel <-chan watch.Event) {
 func (cc *ConfigClient) updateConfig(config string) error {
 	var conf GatewayConfig
 
+	// fmt.Println(config)
+
 	if err := yaml.Unmarshal([]byte(config), &conf); err != nil {
 		return fmt.Errorf("cannot decode config: %w", err)
 	}
+
+	// fmt.Printf("Config: %+v\n", conf)
 
 	cc.config = &conf
 

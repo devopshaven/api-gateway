@@ -1,13 +1,17 @@
 package gateway_test
 
 import (
+	_ "embed"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.pirat.app/api-gateway/gateway"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
+
+//go:embed test/config_ok.yaml
+var validConfig []byte
 
 func TestCreateConfig(t *testing.T) {
 	bb, err := yaml.Marshal(&gateway.GatewayConfig{
@@ -23,6 +27,11 @@ func TestCreateConfig(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
+
+	var conf gateway.GatewayConfig
+	err = yaml.Unmarshal(validConfig, &conf)
+	assert.NoError(t, err)
+	assert.Equal(t, conf.Services[0].ServiceUrl, "srv-url")
 
 	fmt.Println(string(bb))
 }
