@@ -6,9 +6,11 @@ build:
   artifacts:
   - image: hub.pirat.app/api-gateway
     docker:
-      dockerfile: Dockerfile
+      dockerfile: fast.Dockerfile
 deploy:
   kubectl:
+    defaultNamespace: dev
     manifests:
-    - configmap.yaml
-    - deployment.yaml
+    - k8s/configmap.yaml
+    - k8s/roles.yaml
+    - k8s/deployment.yaml

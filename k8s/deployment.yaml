@@ -2,13 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
-  namespace: gateway
 spec:
   selector:
     matchLabels:
       app: api-gateway
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: 'false'
       labels:
         app: api-gateway
         version: 1.0.0
@@ -16,6 +17,15 @@ spec:
       containers:
       - name: api-gateway
         image: hub.pirat.app/api-gateway
+        imagePullPolicy: Always
+        env:
+          - name: OTEL_EXPORTER_JAEGER_AGENT_HOST
+            value: jaeger-agent.jaeger
+        args:
+          - -addr
+          - 0.0.0.0:8080
+          - -authServer
+          - auth-gateway:5009
         resources:
           limits:
             memory: "128Mi"
@@ -26,7 +36,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: gateway
   name: api-gateway
 spec:
   selector:
@@ -35,30 +44,3 @@ spec:
   - port: 8080
     name: http-gateway
     targetPort: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  namespace: gateway
-  name: api-gateway
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-  labels:
-    name: api-gateway
-spec:
-  tls:
-    - hosts:
-      - api.devopshaven.com
-      secretName: api-dh-tls
-  rules:
-  - host: api.devopshaven.com
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: api-gateway
-            port:
-              number: 8080

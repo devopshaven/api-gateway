@@ -1,23 +1,61 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: gateway
   name: gateway-config
 data:
   services.yaml: |
     version: v1
     services:
-        - name: card-service
-          serviceUrl: card-service
+        - name: iam-authorization
+          serviceUrl: iam-authorization-service:8080
           paths:
-            - /api/v1/card
-            - /api/card/v1
-        - name: docker
-          serviceUrl: "docker-registry.developer-tools:5000"
+            - /api/v1/iam/
+            - /api/v2/iam/
+        - name: cart
+          serviceUrl: cart-service:8080
           paths:
-            - /api/_v2
-        - name: localhost-5008
-          serviceUrl: "127.0.0.1:5008"
+            - /api/v1/cart
+            - /api/v2/cart
+            - /api/v1/discount
+            - /api/v2/discount
+        - name: iam-management
+          serviceUrl: iam-management-service:8080
           paths:
-            - /api/local/host
-            - /api/localhost
+            - /connect
+            - /account/confirmemail
+            - /account/logout
+            - /api/v1/iam-management
+            - /api/v2/iam-management
+            - /api/v2/iam-management/partner/me/config
+            - /.well-known/openid-configuration
+        - name: product-catalog
+          serviceUrl: product-catalog-service:8080
+          paths:
+            - /api/v1/productcatalog
+        - name: payment
+          serviceUrl: payment-service:8080
+          paths:
+            - /api/v1/payment
+        - name: language
+          serviceUrl: language-service:8080
+          paths: 
+            - /api/v1/language
+        - name: venue
+          serviceUrl: venue-service:8080
+          paths:
+            - /api/v1/venue
+            - /api/v2/venue
+        - name: ticket
+          serviceUrl: ticket-service:8080
+          paths:
+            - /api/v1/ticket
+            - /api/v2/ticket
+        - name: selection
+          serviceUrl: selection-service:8080
+          paths:
+            - /api/v1/selection
+            - /api/v2/selection
+        - name: card
+          serviceUrl: card-api-service:8080
+          paths:
+            - /api/v1/card/

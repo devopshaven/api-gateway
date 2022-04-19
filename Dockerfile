@@ -1,14 +1,22 @@
-FROM golang
-
-ENV GOPROXY=goproxy.pirat.app
-
-ENV GOTRACEBACK=all
+FROM golang:1.18 as build
 
 WORKDIR /usr/src/app
 
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the rest of the project
 COPY . .
 
-ARG SKAFFOLD_GO_GCFLAGS
-RUN go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /app .
+RUN CGO_ENABLED=0 go build -tags netgo -ldflags="-s -w" -o /app .
 
-ENTRYPOINT [ "/app" ]
+# Create application container from alpine (with CA certs)
+FROM alpine:latest
+COPY --from=build /app /app
+
+# Do not run app in privileged mode
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+CMD [ "/app" ]
