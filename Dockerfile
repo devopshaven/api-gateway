@@ -2,6 +2,9 @@ FROM golang:1.18 as build
 
 WORKDIR /usr/src/app
 
+LABEL org.opencontainers.image.source = "https://github.com/devopshaven/api-gateway"
+LABEL maintainer="Gyula Paal <paalgyula@paalgyula.com>"
+
 # Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
