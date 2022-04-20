@@ -122,7 +122,7 @@ SERVICES:
 
 	// Check if authorization requested
 	if g.authorizeRequests {
-		ar, err := g.auhorizeRequest(req)
+		ar, err := g.authorizeRequest(req)
 
 		if err != nil {
 			renderError(wr, fmt.Sprintf("auth error: %s", err.Error()))
@@ -220,7 +220,7 @@ func appendHostToXForwardHeader(header http.Header, host string) {
 	header.Set("X-Forwarded-For", host)
 }
 
-func (g *Gateway) auhorizeRequest(req *http.Request) (*authservice.AuthResult, error) {
+func (g *Gateway) authorizeRequest(req *http.Request) (*authservice.AuthResult, error) {
 	_, span := otel.Tracer(serviceName).Start(req.Context(), "Request Authorization")
 	defer span.End()
 
