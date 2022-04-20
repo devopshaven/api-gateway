@@ -1,3 +1,4 @@
+![Release](https://img.shields.io/github/v/release/devopshaven/api-gateway)
 [![codecov](https://codecov.io/gh/devopshaven/api-gateway/branch/master/graph/badge.svg?token=ZD5AC3QTUW)](https://codecov.io/gh/devopshaven/api-gateway)
 [![Go Reference](https://pkg.go.dev/badge/github.com/devopshaven/api-gateway.svg)](https://pkg.go.dev/github.com/devopshaven/api-gateway)
 ![Build Workflow](https://github.com/devopshaven/api-gateway/actions/workflows/github-actions-dockerize.yml/badge.svg)
