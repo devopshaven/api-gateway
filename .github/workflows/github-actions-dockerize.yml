@@ -1,5 +1,4 @@
-name: Demo Push
-
+name: Create container
 on:
   push:
     # Publish `master` as Docker `latest` image.
