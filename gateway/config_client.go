@@ -33,6 +33,9 @@ type ConfigClient struct {
 }
 
 func (cc *ConfigClient) Config() *GatewayConfig {
+	cc.mutex.Lock()
+	defer cc.mutex.Unlock()
+
 	return cc.config
 }
 

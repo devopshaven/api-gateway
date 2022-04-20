@@ -14,5 +14,9 @@ package: build
 deploy:
 	docker push hub.pirat.app/api-gateway
 
+test:
+	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+	codecov
+
 run:
 	go run .

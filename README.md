@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/devopshaven/api-gateway/branch/master/graph/badge.svg?token=ZD5AC3QTUW)](https://codecov.io/gh/devopshaven/api-gateway)
+[![Go Reference](https://pkg.go.dev/badge/github.com/devopshaven/api-gateway.svg)](https://pkg.go.dev/github.com/devopshaven/api-gateway)
 # DevopsHaven API gateway
 
 Gateway for DevopsHaven ingress
