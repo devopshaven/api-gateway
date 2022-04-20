@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -17,7 +18,9 @@ import (
 const serviceName = "dh-gateway"
 
 func InitTelemetry() func() {
-	os.Setenv("OTEL_EXPORTER_JAEGER_AGENT_HOST", "localhost")
+	if os.Getenv("OTEL_EXPORTER_JAEGER_AGENT_HOST") == "" {
+		os.Setenv("OTEL_EXPORTER_JAEGER_AGENT_HOST", "localhost")
+	}
 
 	// Setting default exporter to jaeger
 	exp, _ := jaeger.New(jaeger.WithAgentEndpoint())
@@ -34,8 +37,13 @@ func InitTelemetry() func() {
 		)),
 	)
 
+	b3 := b3.New()
+
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{}, propagation.Baggage{}))
+		propagation.TraceContext{},
+		propagation.Baggage{},
+		b3,
+	))
 
 	// Setting default trace provider
 	otel.SetTracerProvider(tp)

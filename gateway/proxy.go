@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 )
 
 //go:embed htmlerror.html
@@ -37,20 +38,33 @@ var hopHeaders = []string{
 type Gateway struct {
 	configClient *ConfigClient
 	authClient   *authservice.Client
+
+	authorizeRequests bool
 }
 
-func NewGateway() *Gateway {
+// NewGateway initializes the new API gateway instance with authServer parameter.
+// When authServer parameter is empty, the server will not authorizes the requests.
+func NewGateway(authServer string) *Gateway {
 	client := NewConfigClient()
 	client.StartWatcher()
 
-	authClient := authservice.NewClient("127.0.0.1:5009")
-
 	InitTelemetry()
 
-	return &Gateway{
+	gw := &Gateway{
 		configClient: client,
-		authClient:   authClient,
 	}
+
+	if authServer == "" {
+		gw.authorizeRequests = false
+
+		log.Warn().Msg("the gateway is running without authentication")
+	} else {
+		gw.authClient = authservice.NewClient(authServer)
+
+		log.Info().Msgf("connecting to the authentication server: %s", authServer)
+	}
+
+	return gw
 }
 
 func (g *Gateway) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
@@ -66,22 +80,22 @@ func (g *Gateway) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Get the root context
+	span := trace.SpanFromContext(req.Context())
+
+	// Rename the span to contain the request URL
+	span.SetName(fmt.Sprintf("%s %s", strings.ToUpper(req.Method), req.URL.Path))
+
 	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
-	//http: Request.RequestURI can't be set in client requests.
-	//http://golang.org/src/pkg/net/http/client.go
+	// http: Request.RequestURI can't be set in client requests.
+	// http://golang.org/src/pkg/net/http/client.go
 	req.RequestURI = ""
 
 	delHopHeaders(req.Header)
 
 	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
 		appendHostToXForwardHeader(req.Header, clientIP)
-	}
-
-	if !strings.HasPrefix(req.URL.Path, "/api") {
-		http.Error(wr, "the api only forwards /api requests", http.StatusBadRequest)
-
-		return
 	}
 
 	service := "no-service"
@@ -106,26 +120,21 @@ SERVICES:
 		return
 	}
 
-	authResult, err := g.authClient.Authorize(
-		req.Context(),
-		req.Method,
-		req.Host,
-		req.URL.Path,
-		req.Header,
-	)
+	// Check if authorization requested
+	if g.authorizeRequests {
+		ar, err := g.auhorizeRequest(req)
 
-	if err != nil {
-		renderError(wr, fmt.Sprintf("auth error: %s", err.Error()))
+		if err != nil {
+			renderError(wr, fmt.Sprintf("auth error: %s", err.Error()))
+		}
 
-		return
-	}
+		if ar.Block {
+			ar.RenderError(wr)
 
-	if authResult.Block {
-		authResult.RenderError(wr)
-
-		return
-	} else {
-		authResult.AddHeaders(req.Header)
+			return
+		} else {
+			ar.AddHeaders(req.Header)
+		}
 	}
 
 	log.Trace().Str("service", service).Msgf("setting url scheme to http and service to: %s", service)
@@ -133,15 +142,9 @@ SERVICES:
 	req.URL.Host = service
 	req.URL.Scheme = "http"
 
-	_, span := otel.Tracer(serviceName).Start(
-		req.Context(),
-		fmt.Sprintf("%s %s", strings.ToUpper(req.Method), req.URL.Path),
-	)
-
 	span.SetAttributes(
 		attribute.String("service", service),
 	)
-	defer span.End()
 
 	wr.Header().Set("x-service", serviceName)
 
@@ -151,7 +154,9 @@ SERVICES:
 	resp, err := client.Do(req)
 	if err != nil {
 		renderError(wr, fmt.Sprintf("error while calling upstream: %s", err.Error()))
+
 		log.Error().Err(err).Msg("upstream call failed")
+
 		span.RecordError(err)
 		span.SetAttributes(
 			attribute.Bool("error", true),
@@ -213,4 +218,39 @@ func appendHostToXForwardHeader(header http.Header, host string) {
 		host = strings.Join(prior, ", ") + ", " + host
 	}
 	header.Set("X-Forwarded-For", host)
+}
+
+func (g *Gateway) auhorizeRequest(req *http.Request) (*authservice.AuthResult, error) {
+	_, span := otel.Tracer(serviceName).Start(req.Context(), "Request Authorization")
+	defer span.End()
+
+	authResult, err := g.authClient.Authorize(
+		req.Context(),
+		req.Method,
+		req.Host,
+		req.URL.Path,
+		req.Header,
+	)
+
+	if err != nil {
+		span.RecordError(err)
+		span.SetAttributes(attribute.Bool("error", true))
+
+		return authResult, err
+	}
+
+	// Adding span information
+	span.SetAttributes(attribute.Bool("request.blocked", authResult.Block))
+
+	return authResult, nil
+}
+
+func (g *Gateway) Close() error {
+	g.configClient.Close()
+
+	if g.authClient != nil {
+		g.authClient.Close()
+	}
+
+	return nil
 }

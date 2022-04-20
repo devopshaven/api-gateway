@@ -96,13 +96,22 @@ func NewConfigClient() *ConfigClient {
 	}
 }
 
+// Starts the watcher in a goroutine.
 func (cc *ConfigClient) StartWatcher() {
-	ch, err := cc.createWatcher()
-	if err != nil {
-		log.Fatal().Err(err).Msgf("cannot start: %s", err)
-	}
+	go func() {
+		log.Info().Msgf("starting watcher on ConfigMap: %s", cc.cmName)
 
-	go cc.handleConfigChanges(ch)
+		for cc.ctx.Err() == nil {
+			log.Info().Msg("crating new watcher instance")
+			ch, err := cc.createWatcher()
+			if err != nil {
+				log.Fatal().Err(err).Msgf("cannot start: %s", err)
+			}
+			cc.handleConfigChanges(ch)
+		}
+
+		log.Info().Msg("config watcher terminated")
+	}()
 }
 
 func (cc *ConfigClient) createWatcher() (<-chan watch.Event, error) {
@@ -122,9 +131,7 @@ func (cc *ConfigClient) createWatcher() (<-chan watch.Event, error) {
 }
 
 func (cc *ConfigClient) handleConfigChanges(eventChannel <-chan watch.Event) {
-	defer cc.cancel()
-
-	for {
+	for cc.ctx.Err() == nil {
 		select {
 		case event, open := <-eventChannel:
 			if open {
@@ -133,7 +140,7 @@ func (cc *ConfigClient) handleConfigChanges(eventChannel <-chan watch.Event) {
 					fallthrough
 				case watch.Modified:
 					cc.mutex.Lock()
-					log.Debug().Msg("configmap modified")
+					log.Debug().Msg("configmap reload triggered")
 					// Update our endpoint
 					if updatedMap, ok := event.Object.(*corev1.ConfigMap); ok {
 						cc.updateConfig(updatedMap.Data["services.yaml"])
@@ -155,20 +162,25 @@ func (cc *ConfigClient) handleConfigChanges(eventChannel <-chan watch.Event) {
 			cc.watcher.Stop()
 		}
 	}
+
+	log.Info().Msg("config handler terminated")
 }
 
 func (cc *ConfigClient) updateConfig(config string) error {
 	var conf GatewayConfig
 
-	// fmt.Println(config)
-
 	if err := yaml.Unmarshal([]byte(config), &conf); err != nil {
 		return fmt.Errorf("cannot decode config: %w", err)
 	}
 
-	// fmt.Printf("Config: %+v\n", conf)
-
 	cc.config = &conf
+
+	return nil
+}
+
+// Close closes the config client and watcher.
+func (cc *ConfigClient) Close() error {
+	cc.cancel()
 
 	return nil
 }
