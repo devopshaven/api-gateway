@@ -6,11 +6,16 @@ Gateway for DevopsHaven ingress
 
 Before you wanna use the gateway please set the RBAC permission to allow to create a configmap watch by the pod to it's own namespace. You can check the [k8s/roles.yaml](k8s/roles.yaml) file for example configuration.
 
-Docker image: `hub.pirat.app/api-gateway`
+Docker image: `ghcr.io/devopshaven/api-gateway:latest`
 
 ### Tracing
 
 The server implements tracing which uses B3 and W3C header propagators with [OpenTelemetry](https://opentelemetry.io/) standards. 
+
+## Command line parameters:
+- `-addr` listen address (default: 127.0.0.1:8080)
+- `-authServer` the authorization server address eg.: `127.0.0.1:5009`. When not set the gateway will **not authorize the requests**! (default: none)
+- `-pretty` enables developer friendly pretty (colored) console log instead of default JSON format
 
 ## Environment variables:
 
